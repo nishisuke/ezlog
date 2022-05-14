@@ -17,7 +17,7 @@ func (l Logger) Output() io.Writer {
 
 func (l *Logger) SetOutput(w io.Writer) {
 	l.out = w
-	l.Logger.SetZerolog(l.Logger.Zerolog.Output(w))
+	l.zerolog = l.zerolog.Output(w)
 }
 
 func (l Logger) Level() log.Lvl {
@@ -26,7 +26,7 @@ func (l Logger) Level() log.Lvl {
 
 func (l *Logger) SetLevel(lvl log.Lvl) {
 	l.level = lvl
-	l.Logger.SetZerolog(l.Logger.Zerolog.Level(zerologLevel(lvl)))
+	l.zerolog = l.zerolog.Level(zerologLevel(lvl))
 }
 
 func (l Logger) Prefix() string {
@@ -35,7 +35,7 @@ func (l Logger) Prefix() string {
 
 func (l *Logger) SetPrefix(p string) {
 	l.prefix = p
-	l.Logger.SetZerolog(l.Logger.Zerolog.With().Str(prefixKey, p).Logger())
+	l.zerolog = l.zerolog.With().Str(prefixKey, p).Logger()
 }
 
 func (l Logger) SetHeader(h string) {

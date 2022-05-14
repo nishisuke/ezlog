@@ -2,49 +2,50 @@ package ezlog
 
 import (
 	"io"
+	"os"
 
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
+	"github.com/nishisuke/ezlog/echologger"
 	"github.com/rs/zerolog"
 )
 
-const (
-	NoSymbol = "-"
-	LevelKey = "level"
+type (
+	Config struct {
+		io.Writer
+		log.Lvl
+		TimeFieldFormat string
+	}
 )
 
-type Logger struct {
-	Zerolog zerolog.Logger
+var DefaultConfig = Config{
+	Writer:          os.Stdout,
+	Lvl:             log.WARN,
+	TimeFieldFormat: zerolog.TimeFormatUnix,
 }
 
-func New(w io.Writer, l zerolog.Level) *Logger {
-	return &Logger{
-		Zerolog: newZerolog(w, l),
+func Prepare(e *echo.Echo) {
+	conf := DefaultConfig
+	zerolog.TimeFieldFormat = conf.TimeFieldFormat
+	e.Logger = echologger.New(conf.Writer, conf.Lvl)
+}
+
+func PrepareWithConfig(e *echo.Echo, conf *Config) {
+	setDefaultIfZeroValue(conf)
+	zerolog.TimeFieldFormat = conf.TimeFieldFormat
+	e.Logger = echologger.New(conf.Writer, conf.Lvl)
+}
+
+func setDefaultIfZeroValue(conf *Config) {
+	if conf.Writer == nil {
+		conf.Writer = DefaultConfig.Writer
 	}
-}
 
-func newZerolog(w io.Writer, l zerolog.Level) zerolog.Logger {
-	return zerolog.New(w).
-		Level(l).
-		With().
-		Timestamp().
-		Logger()
-}
+	if conf.Lvl == 0 {
+		conf.Lvl = DefaultConfig.Lvl
+	}
 
-func (l *Logger) SetZerolog(logger zerolog.Logger) {
-	l.Zerolog = logger
-}
-func Prepare() {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-}
-
-func EventByLevel(logger zerolog.Logger, level zerolog.Level) *zerolog.Event {
-	switch level {
-	case zerolog.FatalLevel:
-		return logger.Fatal() // WithLevel does not call os.Exit.
-	case zerolog.PanicLevel:
-		return logger.Panic() // WithLevel does not call panic.
-	case zerolog.NoLevel:
-		return logger.Log().Str(LevelKey, NoSymbol)
-	default:
-		return logger.WithLevel(level)
+	if conf.TimeFieldFormat == "" {
+		conf.TimeFieldFormat = DefaultConfig.TimeFieldFormat
 	}
 }
